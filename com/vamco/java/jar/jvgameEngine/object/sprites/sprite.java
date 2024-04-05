@@ -2,6 +2,7 @@ package com.vamco.java.jar.jvgameEngine.object.sprites;
 
 import com.vamco.java.jar.jvgameEngine.engine.basePaint;
 import com.vamco.java.jar.jvgameEngine.plugin.base2d.position;
+import com.vamco.java.jar.jvgameEngine.plugin.sprite.eventMap;
 import com.vamco.java.jar.jvgameEngine.plugin.sprite.selfBody;
 
 import java.awt.*;
@@ -38,12 +39,12 @@ public abstract class sprite {
 
     public void runNewThread(){
         init();
-        new Thread(
-                () -> {
-                    while (true){
-                        loop();
-                    }
-                }
-        ).start();
+//        new Thread(
+//                () -> {
+//                    while (true){
+//                        loop();
+//                    }
+//                }
+//        ).start();
     }
 }

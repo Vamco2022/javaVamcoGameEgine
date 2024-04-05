@@ -12,10 +12,14 @@ public abstract class gameMain extends Thread{
     public static gameWindow g;
     static gameDraw d;
     public static ArrayList<sprite> spritesMap;
+    public static long maxSprites; //the max number of sprite in the game
+    public static long tickSpeed; //n tick per second
 
     public abstract void init();
     public abstract void loop();
     public static void initWindow(String title,int[] screenSize){
+        maxSprites = 5000;
+        tickSpeed = 500;
         g = new gameWindow();
         spritesMap = new ArrayList<sprite>();
         d = new gameDraw();
@@ -28,14 +32,14 @@ public abstract class gameMain extends Thread{
                 new MouseAdapter() {
                     @Override
                     public void mousePressed(MouseEvent e) {
-                        listener.mouse.leftClick = (e.getButton() == MouseEvent.BUTTON1);
-                        listener.mouse.rightClick = (e.getButton() == MouseEvent.BUTTON2);
+                        inputListener.mouse.leftClick = (e.getButton() == MouseEvent.BUTTON1);
+                        inputListener.mouse.rightClick = (e.getButton() == MouseEvent.BUTTON2);
                     }
 
                     @Override
                     public void mouseReleased(MouseEvent e) {
-                        listener.mouse.leftClick = !(e.getButton() == MouseEvent.BUTTON1);
-                        listener.mouse.rightClick = !(e.getButton() == MouseEvent.BUTTON2);
+                        inputListener.mouse.leftClick = !(e.getButton() == MouseEvent.BUTTON1);
+                        inputListener.mouse.rightClick = !(e.getButton() == MouseEvent.BUTTON2);
                     }
                 }
         );
@@ -43,14 +47,14 @@ public abstract class gameMain extends Thread{
                 new MouseAdapter() {
                     @Override
                     public void mouseMoved(MouseEvent e) {
-                        listener.mouse.mouseX = e.getX() - 8; //I don't why that always has 8 bigger than true x
-                        listener.mouse.mouseY = e.getY() - 31; //I don't why that always has 31 bigger than true y
+                        inputListener.mouse.mouseX = e.getX() - 8; //I don't why that always has 8 bigger than true x
+                        inputListener.mouse.mouseY = e.getY() - 31; //I don't why that always has 31 bigger than true y
                     }
 
                     @Override
                     public void mouseDragged(MouseEvent e){
-                        listener.mouse.mouseX = e.getX() - 8; //I don't why that always has 8 bigger than true x
-                        listener.mouse.mouseY = e.getY() - 31; //I don't why that always has 31 bigger than true y
+                        inputListener.mouse.mouseX = e.getX() - 8; //I don't why that always has 8 bigger than true x
+                        inputListener.mouse.mouseY = e.getY() - 31; //I don't why that always has 31 bigger than true y
                     }
                 }
         );
@@ -58,20 +62,25 @@ public abstract class gameMain extends Thread{
     }
 
     public static void addSprite(sprite sprite){
-        spritesMap.add(sprite);
+        if (spritesMap.size() < maxSprites) spritesMap.add(sprite);
     }
 
     public void runMain(){
         new Thread(() -> {
-            init();
-            while (true) {
-                loop();
-                //every sprite
-                for (sprite q : spritesMap){
-                    q.loop();
+            try {
+                init();
+                while (true) {
+                    loop();
+                    //every sprite
+                    for (sprite q : spritesMap) {
+                        q.loop();
+                    }
+                    //repaint
+                    d.repaint();
+                    Thread.sleep(1 / tickSpeed);
                 }
-                //repaint
-                d.repaint();
+            }catch (InterruptedException ignored){
+
             }
         }).start();
     }
@@ -85,7 +94,7 @@ public abstract class gameMain extends Thread{
                     switch (a.p){
                         case square -> {
                             g.setColor(a.color);
-                            g.fillRect(a.pos.x,a.pos.y,a.self.wight,a.self.height);
+                            g.fillRect(a.pos.x - (a.self.wight / 2),a.pos.y - (a.self.height / 2),a.self.wight,a.self.height);
                         }
                     }
                 }
@@ -93,7 +102,7 @@ public abstract class gameMain extends Thread{
         }
     }
 
-    public static class listener{
+    public static class inputListener{
         public static class mouse extends MouseAdapter{
             public static boolean leftClick;
             public static boolean rightClick;
@@ -103,6 +112,15 @@ public abstract class gameMain extends Thread{
 
         public static class keyboard{
 
+        }
+    }
+
+    public static class event{
+        public static boolean isTouch(sprite sprite1, sprite sprite2){
+            int xLength = Math.abs(sprite1.pos.x - sprite2.pos.x);
+            int yLength = Math.abs(sprite1.pos.y - sprite2.pos.y);
+            return (xLength <= (sprite1.self.wight / 2 + sprite2.self.wight / 2))
+                    && (yLength <= (sprite1.self.height / 2 + sprite2.self.height / 2));
         }
     }
 }
