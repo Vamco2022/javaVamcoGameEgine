@@ -2,24 +2,27 @@ package com.vamco.java.jar.jvgameEngine.engine;
 
 import com.vamco.java.jar.jvgameEngine.object.sprites.sprite;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public abstract class gameMain extends Thread{
     public static gameWindow g;
     static gameDraw d;
     public static ArrayList<sprite> spritesMap;
-    public static long maxSprites; //the max number of sprite in the game
-    public static long tickSpeed; //n tick per second
+    public static long maxSprites = 5000; //the max number of sprite in the game
+    public static long tickSpeed = 500; //the tick per second
 
     public abstract void init();
     public abstract void loop();
     public static void initWindow(String title,int[] screenSize){
-        maxSprites = 5000;
-        tickSpeed = 500;
         g = new gameWindow();
         spritesMap = new ArrayList<sprite>();
         d = new gameDraw();
@@ -58,6 +61,28 @@ public abstract class gameMain extends Thread{
                     }
                 }
         );
+        g.addKeyListener(
+                new KeyAdapter() {
+                    @Override
+                    public void keyPressed(KeyEvent e) {
+                        inputListener.keyboard.isClick = true;
+                    }
+
+                    @Override
+                    public void keyTyped(KeyEvent e) {
+                        inputListener.keyboard.isClick = true;
+                        inputListener.keyboard.keyCode = e.getKeyCode();
+                        inputListener.keyboard.keyChar = e.getKeyChar();
+                    }
+
+                    @Override
+                    public void keyReleased(KeyEvent e) {
+                        inputListener.keyboard.isClick = false;
+                        inputListener.keyboard.keyCode = null;
+                        inputListener.keyboard.keyChar = null;
+                    }
+                }
+        );
         g.setVisible(true);
     }
 
@@ -77,7 +102,7 @@ public abstract class gameMain extends Thread{
                     }
                     //repaint
                     d.repaint();
-                    Thread.sleep(1 / tickSpeed);
+                    Thread.sleep(1000 / tickSpeed);
                 }
             }catch (InterruptedException ignored){
 
@@ -90,12 +115,17 @@ public abstract class gameMain extends Thread{
         public void paintComponent(Graphics g){
             super.paintComponent(g);
             for (sprite a : spritesMap){
-                if (a.img == null){
-                    switch (a.p){
-                        case square -> {
-                            g.setColor(a.color);
-                            g.fillRect(a.pos.x - (a.self.wight / 2),a.pos.y - (a.self.height / 2),a.self.wight,a.self.height);
+                if (!a.isHind) {
+                    if (a.img == null) {
+                        switch (a.p) {
+                            case square -> {
+                                g.setColor(a.color);
+                                g.fillRect(a.position.x - (a.self.wight / 2), a.position.y - (a.self.height / 2), a.self.wight, a.self.height);
+                            }
                         }
+                    }else{
+                        Image img = Toolkit.getDefaultToolkit().getImage(a.img.getPath());
+                        g.drawImage(img,a.position.x - (a.self.wight / 2), a.position.y - (a.self.height / 2),this);
                     }
                 }
             }
@@ -103,7 +133,7 @@ public abstract class gameMain extends Thread{
     }
 
     public static class inputListener{
-        public static class mouse extends MouseAdapter{
+        public static class mouse{
             public static boolean leftClick;
             public static boolean rightClick;
             public static int mouseX;
@@ -111,16 +141,60 @@ public abstract class gameMain extends Thread{
         }
 
         public static class keyboard{
-
+            public static boolean isClick;
+            public static Integer keyCode;
+            public static Character keyChar;
         }
     }
 
     public static class event{
         public static boolean isTouch(sprite sprite1, sprite sprite2){
-            int xLength = Math.abs(sprite1.pos.x - sprite2.pos.x);
-            int yLength = Math.abs(sprite1.pos.y - sprite2.pos.y);
+            int xLength = Math.abs(sprite1.position.x - sprite2.position.x);
+            int yLength = Math.abs(sprite1.position.y - sprite2.position.y);
             return (xLength <= (sprite1.self.wight / 2 + sprite2.self.wight / 2))
                     && (yLength <= (sprite1.self.height / 2 + sprite2.self.height / 2));
+        }
+
+        public static boolean isTouch(String id1,String id2){
+            ArrayList<sprite> sprites1 = new ArrayList<>();
+            ArrayList<sprite> sprites2 = new ArrayList<>();
+            for (sprite i : spritesMap){
+                if (i.spriteId.equals(id1)){
+                    sprites1.add(i);
+                }else if (i.spriteId.equals(id2)){
+                    sprites2.add(i);
+                }
+            }
+            for (sprite i : sprites1){
+                for (sprite a : sprites2){
+                    if (isTouch(i,a)){
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
+    public static class gameSystem{
+        public static void setMaxSprite(int maxSprite){
+            maxSprites = maxSprite;
+        }
+
+        public static void setMaxTickPerSecond(long tickHz){
+            tickSpeed = tickHz;
+        }
+
+        //public static void setMaxThread(int maxThread);
+    }
+
+    public static class spriteConsole{
+        public static ArrayList<sprite> getSpriteList(String id){
+            ArrayList<sprite> out = new ArrayList<>();
+            for (sprite i : spritesMap){
+                if (i.spriteId.equals(id)) out.add(i);
+            }
+            return out;
         }
     }
 }
