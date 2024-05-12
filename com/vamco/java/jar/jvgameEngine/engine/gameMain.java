@@ -120,7 +120,49 @@ public abstract class gameMain extends Thread{
                         switch (a.p) {
                             case square -> {
                                 g.setColor(a.color);
-                                g.fillRect(a.position.x - (a.self.wight / 2), a.position.y - (a.self.height / 2), a.self.wight, a.self.height);
+                                if (a.degree % 90 == 0) {
+                                    g.fillRect((a.position.x - (a.self.wight / 2)), (a.position.y - (a.self.height / 2)), a.self.wight, a.self.height);
+                                }else{
+                                    //Because JPanel no able to paint object with its degree
+                                    //So we try to use something to virtual it
+                                    //Since the draw will use lots of time, the window thread can't run, so we put it into a new thread
+                                    new Thread(() -> {
+                                            int[] leftAbovePoint = new int[]{(int) Math.floor((a.position.x - Math.cos(Math.toRadians(a.degree)) * a.self.wight / 2)), (int) Math.floor(a.position.y - Math.sin(Math.toRadians(a.degree)) * a.self.height / 2)};
+                                            int[] rightAbovePoint = new int[]{(int) Math.ceil((a.position.x + Math.cos(Math.toRadians(a.degree)) * a.self.wight / 2)), (int) Math.ceil((a.position.y - Math.sin(Math.toRadians(a.degree)) * a.self.height / 2))};
+                                            int[] leftDownPoint = new int[]{(int) Math.floor((a.position.x - Math.cos(Math.toRadians(a.degree)) * a.self.wight / 2)), (int) Math.floor((a.position.y + Math.sin(Math.toRadians(a.degree)) * a.self.height / 2))};
+                                            int[] rightDownPoint = new int[]{(int) Math.ceil((a.position.x + Math.cos(Math.toRadians(a.degree)) * a.self.wight / 2)), (int) Math.ceil((a.position.y + Math.sin(Math.toRadians(a.degree)) * a.self.height / 2))};
+                                            int upLineLeft;
+                                            int downLineLeft;
+                                            if (a.degree > 0) {
+                                                upLineLeft = (Math.abs(leftAbovePoint[1] - leftDownPoint[1])) / (Math.abs(leftAbovePoint[0] - leftDownPoint[0]));
+                                                //upLineRight = (Math.abs(rightAbovePoint[1] - leftAbovePoint[1])) / (Math.abs(rightAbovePoint[0] - leftAbovePoint[0]));
+                                                downLineLeft = (Math.abs(leftDownPoint[1] - rightDownPoint[1])) / (Math.abs(leftDownPoint[0] - rightDownPoint[0]));
+                                                //downLineRight = (Math.abs(rightAbovePoint[1] - rightDownPoint[1])) / (Math.abs(rightAbovePoint[0] - rightDownPoint[0]));
+                                            } else {
+                                                upLineLeft = (Math.abs(rightAbovePoint[1] - leftAbovePoint[1])) / (Math.abs(rightAbovePoint[0] - leftAbovePoint[0]));
+                                                //upLineRight = (Math.abs(rightAbovePoint[1] - rightDownPoint[1])) / (Math.abs(rightAbovePoint[0] - rightDownPoint[0]));
+                                                downLineLeft = (Math.abs(leftAbovePoint[1] - leftDownPoint[1])) / (Math.abs(leftAbovePoint[0] - leftDownPoint[0]));
+                                                //downLineRight = (Math.abs(rightDownPoint[1] - leftDownPoint[1])) / (Math.abs(rightDownPoint[0] - leftDownPoint[0]));
+                                            }
+                                            //paint cube for degree
+                                            int s = (int) Math.sqrt(Math.pow(a.self.wight, 2) + Math.pow(a.self.height, 2));
+                                            int drawArea = 1;
+                                            int localAbs = s;
+                                            while (drawArea <= s) {
+                                                g.fillRect(a.position.x - drawArea, a.position.y - localAbs, drawArea, 1);
+                                                drawArea += upLineLeft;
+                                                System.out.println("Paint up");
+                                                localAbs--;
+                                            }
+                                            while (drawArea >= 1) {
+                                                g.fillRect(a.position.x - drawArea, a.position.y - localAbs, drawArea, 1);
+                                                drawArea -= downLineLeft;
+                                                System.out.println("Paint down");
+                                                localAbs--;
+                                            }
+                                        }
+                                    ).start();
+                                }
                             }
                         }
                     }else{
